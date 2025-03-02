@@ -7,7 +7,7 @@
 1. Process Hiding
 2. Synchroniztion(ish...)
 
-#To-Do :
+# To-Do :
 
 1. Process Elevation (DKOM)
 2. SubVirt Module
@@ -15,4 +15,4 @@
 4. better anti-anti-rootkit evasion techniques(?)
 5. GUI client(?)
 
-# THIS PROJECT HAS YET TO BE COMPLETED, DO NOT RUN IT!!!!
+## THIS PROJECT HAS YET TO BE COMPLETED, DO NOT RUN IT!!!!

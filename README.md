@@ -1,6 +1,6 @@
 # Intro
 
-- This projects aims to implement the technique discussed in the Research paper released by Microsoft !(link)[https://www.microsoft.com/en-us/research/publication/subvirt-implementing-malware-with-virtual-machines/]. Basically, the rootkit inserts a thin layer of hypervisor between the host-OS and the hardware, to do this I plan to use vt-x and monitor system-exit calls to get important function calls.
+- This projects aims to implement the technique discussed in the Research paper released by Microsoft (link)![https://www.microsoft.com/en-us/research/publication/subvirt-implementing-malware-with-virtual-machines/]. Basically, the rootkit inserts a thin layer of hypervisor between the host-OS and the hardware, to do this I plan to use vt-x and monitor system-exit calls to get important function calls.
 - More information about this will be published in my blog later... :)
 - Currently Implemented,
 

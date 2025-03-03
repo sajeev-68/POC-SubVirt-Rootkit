@@ -7,7 +7,7 @@ extern LONG AllCPURaised, NumberofRaisedCPU;
 
 static PKDPC Sync::GainAllThreadExclusive() {
 	NTSTATUS ns = STATUS_SUCCESS;
-	ULONG u_currentCPU=0;
+	ULONG u_currentCPU = 0;
 	CCHAR i;
 
 	PKDPC dpc, temp_dpc;
@@ -23,7 +23,7 @@ static PKDPC Sync::GainAllThreadExclusive() {
 	InterlockedAnd(&AllCPURaised, 0);
 	InterlockedAnd(&NumberofRaisedCPU, 0);
 
-	temp_dpc = (PKDPC)ExAllocatePool(NonPagedPool, KeNumberProcessors* sizeof(KDPC));
+	temp_dpc = (PKDPC)ExAllocatePool(NonPagedPool, KeNumberProcessors * sizeof(KDPC));
 
 	if (temp_dpc == NULL)
 		return NULL;
@@ -41,7 +41,22 @@ static PKDPC Sync::GainAllThreadExclusive() {
 	}
 
 	while (InterlockedCompareExchange(&NumberofRaisedCPU, KeNumberProcessors - 1, KeNumberProcessors - 1) != KeNumberProcessors - 1) {
-		_asm nop;
+		YieldProcessor();
 	}
 	return dpc;
+}
+
+static NTSTATUS Sync::ReleaseAllThreadExclusive(PVOID pkdpc) {
+
+	InterlockedIncrement(&AllCPURaised);
+
+	while (InterlockedCompareExchange(&NumberofRaisedCPU, 0, 0))
+		YieldProcessor();
+
+	if (pkdpc != NULL) {
+		ExFreePool(pkdpc);
+		pkdpc = NULL;
+	}
+
+	return STATUS_SUCCESS;
 }

@@ -3,5 +3,5 @@
 
 namespace Sync {
 	static PKDPC GainAllThreadExclusive();
-	static PKDPC ReleaseAllThreadExclusive();
+	static NTSTATUS ReleaseAllThreadExclusive(PVOID pkdpc);
 }

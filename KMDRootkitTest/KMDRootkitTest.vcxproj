@@ -109,6 +109,7 @@
   <ItemGroup>
     <ClCompile Include="IOCTL_Handler.cpp" />
     <ClCompile Include="offsets_n_tokens.h" />
+    <ClCompile Include="Synchronization.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>

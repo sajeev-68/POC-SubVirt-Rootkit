@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35806.99 d17.13
+VisualStudioVersion = 17.13.35806.99
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KMDRootkitTest", "KMDRootkitTest\KMDRootkitTest.vcxproj", "{E551A0C6-DF95-7CBD-13CE-0F44F000DDC6}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KMDRootkit-UserMode", "KMDRootkit-UserMode\KMDRootkit-UserMode.vcxproj", "{A24B5C69-ED01-44BB-A7D8-AF6D2E3B3339}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,6 +27,14 @@ Global
 		{E551A0C6-DF95-7CBD-13CE-0F44F000DDC6}.Release|x64.ActiveCfg = Release|x64
 		{E551A0C6-DF95-7CBD-13CE-0F44F000DDC6}.Release|x64.Build.0 = Release|x64
 		{E551A0C6-DF95-7CBD-13CE-0F44F000DDC6}.Release|x64.Deploy.0 = Release|x64
+		{A24B5C69-ED01-44BB-A7D8-AF6D2E3B3339}.Debug|ARM64.ActiveCfg = Debug|x64
+		{A24B5C69-ED01-44BB-A7D8-AF6D2E3B3339}.Debug|ARM64.Build.0 = Debug|x64
+		{A24B5C69-ED01-44BB-A7D8-AF6D2E3B3339}.Debug|x64.ActiveCfg = Debug|x64
+		{A24B5C69-ED01-44BB-A7D8-AF6D2E3B3339}.Debug|x64.Build.0 = Debug|x64
+		{A24B5C69-ED01-44BB-A7D8-AF6D2E3B3339}.Release|ARM64.ActiveCfg = Release|x64
+		{A24B5C69-ED01-44BB-A7D8-AF6D2E3B3339}.Release|ARM64.Build.0 = Release|x64
+		{A24B5C69-ED01-44BB-A7D8-AF6D2E3B3339}.Release|x64.ActiveCfg = Release|x64
+		{A24B5C69-ED01-44BB-A7D8-AF6D2E3B3339}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

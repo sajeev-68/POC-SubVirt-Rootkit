@@ -1,7 +1,6 @@
 #pragma once
-#include<Ntifs.h>
 
 namespace Sync {
-	static PKDPC GainAllThreadExclusive();
-	static NTSTATUS ReleaseAllThreadExclusive(PVOID pkdpc);
+	PKDPC GainAllThreadExclusive();
+	NTSTATUS ReleaseAllThreadExclusive(PVOID pkdpc);
 }

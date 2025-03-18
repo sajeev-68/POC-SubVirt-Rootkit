@@ -1,29 +1,29 @@
 #include<ntddk.h>
-#include<wdm.h>
 #include "sync.h"
 #include "utils.h"
 
 extern LONG AllCPURaised, NumberofRaisedCPU;
+KIRQL oldIRQL;
 
-static PKDPC Sync::GainAllThreadExclusive() {
+PKDPC Sync::GainAllThreadExclusive() {
 	NTSTATUS ns = STATUS_SUCCESS;
-	ULONG u_currentCPU = 0;
+	LONG u_currentCPU = 0;
 	CCHAR i;
-
+	
 	PKDPC dpc, temp_dpc;
 
 
-	ns = Utilities::RaiseCurrentThreadLevel();
+	ns = Utilities::RaiseCurrentThreadLevel(&oldIRQL);
 
 	if (!NT_SUCCESS(ns)) {
-		KdPrint(("! Current thread not in Dipatch level... Unable to raise all CPU levels to DISPATCH_LEVEL\n"));
+		DbgPrintEx(0, 0, "! Current thread not in Dipatch level... Unable to raise all CPU levels to DISPATCH_LEVEL\n");
 		return NULL;
 	}
 
 	InterlockedAnd(&AllCPURaised, 0);
 	InterlockedAnd(&NumberofRaisedCPU, 0);
 
-	temp_dpc = (PKDPC)ExAllocatePool(NonPagedPool, KeNumberProcessors * sizeof(KDPC));
+	temp_dpc = (PKDPC)ExAllocatePool2(NonPagedPool, KeNumberProcessors * sizeof(KDPC), 2);
 
 	if (temp_dpc == NULL)
 		return NULL;
@@ -46,7 +46,11 @@ static PKDPC Sync::GainAllThreadExclusive() {
 	return dpc;
 }
 
-static NTSTATUS Sync::ReleaseAllThreadExclusive(PVOID pkdpc) {
+NTSTATUS Sync::ReleaseAllThreadExclusive(PVOID pkdpc) {
+
+	NTSTATUS ns = STATUS_SUCCESS;
+
+	DbgPrintEx(0, 0, "ReleaseAllThreadExclusive called at IRQL: %d\n", KeGetCurrentIrql());
 
 	InterlockedIncrement(&AllCPURaised);
 
@@ -57,6 +61,12 @@ static NTSTATUS Sync::ReleaseAllThreadExclusive(PVOID pkdpc) {
 		ExFreePool(pkdpc);
 		pkdpc = NULL;
 	}
+	ns = Utilities::DropCurrentThreadLevel(oldIRQL);
 
+	if (!NT_SUCCESS(ns)) {
+		DbgPrintEx(0, 0, "! Current thread not in Passive level...\n");
+		return NULL;
+	}
+	DbgPrintEx(0, 0, "Current IRQL: %d\n", KeGetCurrentIrql());
 	return STATUS_SUCCESS;
 }

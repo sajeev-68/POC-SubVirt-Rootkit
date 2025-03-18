@@ -5,7 +5,7 @@
 
 ## Currently Implemented
 1. Process Hiding
-2. Synchroniztion(ish...)
+2. Synchroniztion
 
 # To-Do :
 

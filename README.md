@@ -10,7 +10,7 @@
    
 # To-Do :
 
-1.Process Elevation (DKOM)✅
+1. Process Elevation (DKOM)✅
 2. SubVirt Module
 3. Network Communication/Dropper
 4. better anti-anti-rootkit evasion techniques(?)

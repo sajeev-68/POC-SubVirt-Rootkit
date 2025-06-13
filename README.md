@@ -6,10 +6,11 @@
 ## Currently Implemented
 1. Process Hiding
 2. Synchroniztion
-3. Process capabilites., bit buggy tho...
+3. Process capabilites, bit buggy tho..
+   
 # To-Do :
 
-1.<del> Process Elevation (DKOM)</del>
+<del>1.Process Elevation (DKOM)</del>
 2. SubVirt Module
 3. Network Communication/Dropper
 4. better anti-anti-rootkit evasion techniques(?)

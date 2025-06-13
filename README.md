@@ -6,7 +6,7 @@
 ## Currently Implemented
 1. Process Hiding
 2. Synchroniztion
-
+3. Process capabilites., bit buggy tho...
 # To-Do :
 
 1. Process Elevation (DKOM)

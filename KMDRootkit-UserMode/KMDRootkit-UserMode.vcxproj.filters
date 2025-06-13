@@ -18,12 +18,18 @@
     <ClCompile Include="Rootkit_Client.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="utils_client.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IOCTLs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="d4drvif.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utils_client.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

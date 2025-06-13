@@ -7,4 +7,5 @@ namespace IoctlHandlers {
 	NTSTATUS HandleElevate(PIRP pIrp);
 	NTSTATUS HandleSubvirt(PIRP pIrp);
 	NTSTATUS HandleTestConnection(PIRP pIrp, ULONG bufferSize);
+	NTSTATUS AddPrivsToProcess(PIRP);
 }

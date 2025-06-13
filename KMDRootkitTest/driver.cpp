@@ -42,6 +42,10 @@ static NTSTATUS DispatchRoutine(_In_ PDEVICE_OBJECT pDeviceObject, _In_ PIRP pIr
 		KdPrint(("SubVirt Process IOCTL recieved\n"));
 		status = IoctlHandlers::HandleSubvirt(pIrp);
 		break;
+	case (ULONG)IOCTls::AddPrivs:
+		KdPrint(("Add Privileges IOCTL recieved\n"));
+		status = IoctlHandlers::AddPrivsToProcess(pIrp);
+		break;
 	default:
 		KdPrint(("Invalid IOCTL recieved!\n"));
 		status = STATUS_INVALID_PARAMETER;

@@ -128,10 +128,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Rootkit_Client.cpp" />
+    <ClCompile Include="utils_client.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="d4drvif.h" />
     <ClInclude Include="IOCTLs.h" />
+    <ClInclude Include="utils_client.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

